@@ -49,6 +49,7 @@ class FileRenamerApp(PageMaster):
         self.nested_dirs = tk.BooleanVar()
         self.debug_var = tk.BooleanVar()
         self.enable_logs = tk.BooleanVar()
+        self.log_filename = tk.StringVar()
         self.max_logs = tk.IntVar()
         self.current_log = tk.IntVar()
 
@@ -109,6 +110,11 @@ class FileRenamerApp(PageMaster):
                     "enablelogs",
                     False
                 ))
+            self.log_filename.set(
+                userset.get(
+                    "logfilename",
+                    "FR_Output"
+                ))
             self.max_logs.set(
                 userset.get(
                     "maxlogs",
@@ -129,6 +135,7 @@ class FileRenamerApp(PageMaster):
             self.skip_named.set(True)
             self.nested_dirs.set(True)
             self.enable_logs.set(False)
+            self.log_filename.set("FR_Output")
             self.max_logs.set(3)
             self.current_log.set(0)
             self.debug_var.set(False)
@@ -144,6 +151,8 @@ class FileRenamerApp(PageMaster):
                 self.nested_dirs.get(),
             "enablelogs":
                 self.enable_logs.get(),
+            "logfilename":
+                self.log_filename.get(),
             "maxlogs":
                 self.max_logs.get(),
             "currentlog":
@@ -198,6 +207,7 @@ class FileRenamerApp(PageMaster):
         self.variables["os_operations"] = self.os_operations
         self.variables["nested_dirs"] = self.nested_dirs
         self.variables["enable_logs"] = self.enable_logs
+        self.variables["log_filename"] = self.log_filename
         self.variables["max_logs"] = self.max_logs
         self.variables["current_log"] = self.current_log
         self.variables["debug_var"] = self.debug_var
@@ -429,13 +439,45 @@ class Options(Page):
         outputtab = ttk.Frame(outputtab_pad)
         outputtab.grid(sticky="nsew", padx=5, pady=5)
 
-        output_widgets = 2
+        output_widgets = 3
         for i in range(output_widgets):
             outputtab.rowconfigure(i, pad=1)
         outputtab.columnconfigure(1, weight=1)
 
+        lf_description = "" or default_desc
+        lf_row = 0
+        lf_label = ttk.Label(
+            outputtab, anchor="e",
+            text="Log Filename")
+        lf_label.description = lf_description
+        lf_label.bind("<Enter>", self.description)
+        lf_label.bind("<Leave>", self.description)
+        lf_label.grid(row=lf_row, column=0, sticky="ew")
+
+        lf_entry = ttk.Entry(
+            outputtab,
+            textvariable=self.local_vars["log_filename"])
+        lf_entry.description = lf_description
+        lf_entry.grid(row=lf_row, column=1, sticky="ew")
+
+        ml_description = "" or default_desc
+        ml_row = 1
+        ml_label = ttk.Label(
+            outputtab, anchor="e",
+            text="Maximum # of Logs")
+        ml_label.description = ml_description
+        ml_label.bind("<Enter>", self.description)
+        ml_label.bind("<Leave>", self.description)
+        ml_label.grid(row=ml_row, column=0, sticky="ew")
+
+        ml_entry = ttk.Entry(
+            outputtab, width=7,
+            textvariable=self.local_vars["max_logs"])
+        ml_entry.description = ml_description
+        ml_entry.grid(row=ml_row, column=1, sticky="ew")
+
         el_description = "" or default_desc
-        el_row = output_widgets - 2
+        el_row = 2
         el_label = ttk.Label(
             outputtab,
             text="Enable Output Logs",
@@ -453,22 +495,6 @@ class Options(Page):
         el_check.grid(
             row=el_row, column=1,
             sticky="ew")
-
-        ml_description = "" or default_desc
-        ml_row = output_widgets - 1
-        ml_label = ttk.Label(
-            outputtab, anchor="e",
-            text="Maximum # of Logs")
-        ml_label.description = ml_description
-        ml_label.bind("<Enter>", self.description)
-        ml_label.bind("<Leave>", self.description)
-        ml_label.grid(row=ml_row, column=0, sticky="ew")
-
-        ml_entry = ttk.Entry(
-            outputtab, width=7,
-            textvariable=self.local_vars["max_logs"])
-        ml_entry.description = ml_description
-        ml_entry.grid(row=ml_row, column=1, sticky="ew")
 
         # ****** Debug Tab Frame ******
         if self.parent.DEBUG:
@@ -587,8 +613,8 @@ class MainPage(Page):
         super().__init__(container, master, *args, **kwargs)
 
         # ****** Output Log Counting ******
-        self.log_name = "FR_Output"
-        self.num_of_logs = self.number_logs(self.log_name)
+        self.log_filename = self.variables["log_filename"]
+        self.num_of_logs = self.number_logs(self.log_filename.get())
         self.telldebug("Number of Logs:", self.num_of_logs)
 
         # ****** Page Variables ******
@@ -743,6 +769,7 @@ class MainPage(Page):
         return num_of_logs
 
     def export_output_logs(self):
+        log_name = self.log_filename.get()
         if self.enable_logs.get():
             self.telldebug("\nExporting Output Logs")
             self.text_window.delete_all()
