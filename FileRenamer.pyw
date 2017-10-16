@@ -17,6 +17,7 @@ import os
 from xntypes import File, ListStack
 from xntypes.tktypes import PageMaster, Output, ButtonFrame
 
+
 # ****** Globals ******
 FONT = "Source Code Pro"
 FONT_SIZE = 12
@@ -47,6 +48,9 @@ class FileRenamerApp(PageMaster):
         self.skip_named = tk.BooleanVar()
         self.nested_dirs = tk.BooleanVar()
         self.debug_var = tk.BooleanVar()
+        self.enable_logs = tk.BooleanVar()
+        self.max_logs = tk.IntVar()
+        self.current_log = tk.IntVar()
 
         # ****** Variable Initializations ******
         self.os_operations.set(True)
@@ -71,9 +75,7 @@ class FileRenamerApp(PageMaster):
         self._update_settings()
         self._make_copy_dict()
 
-        frame = MainPage(self.container, self)
-        self.frames[MainPage] = frame
-        frame.grid(row=0, column=0, sticky="nsew")
+        self.show_frame(MainPage)
 
     def main_close(self):
         for page in self.frames.values():
@@ -102,6 +104,21 @@ class FileRenamerApp(PageMaster):
                     "searchnested",
                     True
                 ))
+            self.enable_logs.set(
+                userset.get(
+                    "enablelogs",
+                    False
+                ))
+            self.max_logs.set(
+                userset.get(
+                    "maxlogs",
+                    3
+                ))
+            self.current_log.set(
+                int(userset.get(
+                    "currentlog",
+                    0
+                )))
             self.debug_var.set(
                 userset.getboolean(
                     "developer",
@@ -111,6 +128,9 @@ class FileRenamerApp(PageMaster):
             self.supported_extensions.set(self.default_extensions)
             self.skip_named.set(True)
             self.nested_dirs.set(True)
+            self.enable_logs.set(False)
+            self.max_logs.set(3)
+            self.current_log.set(0)
             self.debug_var.set(False)
 
     def _export_settings(self):
@@ -121,7 +141,13 @@ class FileRenamerApp(PageMaster):
             "skipnamed":
                 self.skip_named.get(),
             "searchnested":
-                self.nested_dirs.get()}
+                self.nested_dirs.get(),
+            "enablelogs":
+                self.enable_logs.get(),
+            "maxlogs":
+                self.max_logs.get(),
+            "currentlog":
+                self.current_log.get()}
 
         if self.DEBUG:
             config["UserSettings"].update(
@@ -171,6 +197,9 @@ class FileRenamerApp(PageMaster):
         self.variables["supported_extensions"] = self.supported_extensions
         self.variables["os_operations"] = self.os_operations
         self.variables["nested_dirs"] = self.nested_dirs
+        self.variables["enable_logs"] = self.enable_logs
+        self.variables["max_logs"] = self.max_logs
+        self.variables["current_log"] = self.current_log
         self.variables["debug_var"] = self.debug_var
         exts = self.supported_extensions.get().split(",")
         for i in range(len(exts)):
@@ -349,25 +378,25 @@ class Options(Page):
             sticky="ew")
 
         sn_desc = "" or default_desc
-        nd_row = rename_widgets - 2
-        nd_label = ttk.Label(
+        sn_row = rename_widgets - 2
+        sn_label = ttk.Label(
             renametab,
             text="Skip Named:",
             anchor="e")
-        nd_label.description = sn_desc
-        nd_label.grid(
-            row=nd_row, column=0,
+        sn_label.description = sn_desc
+        sn_label.grid(
+            row=sn_row, column=0,
             sticky="ew")
-        nd_label.bind("<Enter>", self.description)
-        nd_label.bind("<Leave>", self.description)
+        sn_label.bind("<Enter>", self.description)
+        sn_label.bind("<Leave>", self.description)
 
-        nd_check = ttk.Checkbutton(
+        sn_check = ttk.Checkbutton(
             renametab,
             variable=self.local_vars["skip_named"],
             onvalue=True, offvalue=False)
-        nd_check.description = sn_desc
-        nd_check.grid(
-            row=nd_row, column=1,
+        sn_check.description = sn_desc
+        sn_check.grid(
+            row=sn_row, column=1,
             sticky="ew")
 
         nd_description = "" or default_desc
@@ -385,11 +414,64 @@ class Options(Page):
             renametab,
             variable=self.local_vars["nested_dirs"],
             onvalue=True, offvalue=False)
-        nd_check.grid(row=nd_row, column=1, sticky="w")
         nd_check.description = nd_description
+        nd_check.grid(
+            row=nd_row, column=1,
+            sticky="ew")
 
+        # ****** Output Logs Tab Frame ******
+        outputtab_pad = ttk.Frame(notebook)
+        outputtab_pad.grid(row=0, column=0, sticky="nsew")
+        outputtab_pad.columnconfigure(0, weight=1)
+        outputtab_pad.rowconfigure(0, weight=1)
+        notebook.add(outputtab_pad, text="Output Logs".center(20))
+
+        outputtab = ttk.Frame(outputtab_pad)
+        outputtab.grid(sticky="nsew", padx=5, pady=5)
+
+        output_widgets = 2
+        for i in range(output_widgets):
+            outputtab.rowconfigure(i, pad=1)
+        outputtab.columnconfigure(1, weight=1)
+
+        el_description = "" or default_desc
+        el_row = output_widgets - 2
+        el_label = ttk.Label(
+            outputtab,
+            text="Enable Output Logs",
+            anchor="e")
+        el_label.grid(row=el_row, column=0, sticky="ew")
+        el_label.description = el_description
+        el_label.bind("<Enter>", self.description)
+        el_label.bind("<Leave>", self.description)
+
+        el_check = ttk.Checkbutton(
+            outputtab,
+            variable=self.local_vars["enable_logs"],
+            onvalue=True, offvalue=False)
+        el_check.description = el_description
+        el_check.grid(
+            row=el_row, column=1,
+            sticky="ew")
+
+        ml_description = "" or default_desc
+        ml_row = output_widgets - 1
+        ml_label = ttk.Label(
+            outputtab, anchor="e",
+            text="Maximum # of Logs")
+        ml_label.description = ml_description
+        ml_label.bind("<Enter>", self.description)
+        ml_label.bind("<Leave>", self.description)
+        ml_label.grid(row=ml_row, column=0, sticky="ew")
+
+        ml_entry = ttk.Entry(
+            outputtab, width=7,
+            textvariable=self.local_vars["max_logs"])
+        ml_entry.description = ml_description
+        ml_entry.grid(row=ml_row, column=1, sticky="ew")
+
+        # ****** Debug Tab Frame ******
         if self.parent.DEBUG:
-            # ****** Debug Tab Frame ******
             debugtab_pad = ttk.Frame(notebook)
             debugtab_pad.grid(row=0, column=0, sticky="nsew")
             debugtab_pad.columnconfigure(0, weight=1)
@@ -505,22 +587,8 @@ class MainPage(Page):
         super().__init__(container, master, *args, **kwargs)
 
         # ****** Output Log Counting ******
-        log_name = "FR_Output"
-        self.num_of_logs = int()
-        log_folder = r".\Logs"
-        if not os.path.exists(log_folder):
-            os.mkdir(log_folder)
-        else:
-            log_list = os.listdir(log_folder)
-            if len(log_list):
-                last_log = str()
-                for log in log_list:
-                    if log[:len(log_name)] == log_name:
-                        last_log = log
-                log_reg = re.compile(r"(%s)(\d+)(.txt)" % log_name).search(last_log)
-                if log_reg is not None:
-                    self.num_of_logs = int(log_reg[2])
-
+        self.log_name = "FR_Output"
+        self.num_of_logs = self.number_logs(self.log_name)
         self.telldebug("Number of Logs:", self.num_of_logs)
 
         # ****** Page Variables ******
@@ -528,6 +596,7 @@ class MainPage(Page):
         self.lead = tk.StringVar()
         self.name = tk.StringVar()
         self.lead_length = 3
+        self.enable_logs = self.variables["enable_logs"]
 
         # ****** Initialization ******
         self._create_widgets()
@@ -654,9 +723,29 @@ class MainPage(Page):
     def _settings(self, event=None):
         self.parent.show_frame(Options)
 
+    @staticmethod
+    def number_logs(log_name):
+        num_of_logs = int()
+        log_folder = r".\Logs"
+        if not os.path.exists(log_folder):
+            os.mkdir(log_folder)
+        else:
+            log_list = os.listdir(log_folder)
+            if len(log_list):
+                last_log = str()
+                for log in log_list:
+                    if log[:len(log_name)] == log_name:
+                        last_log = log
+                lrpattern = r"(%s)(\d+).(txt)" % log_name
+                log_reg = re.compile(lrpattern).search(last_log)
+                if log_reg is not None:
+                    num_of_logs = int(log_reg[2])
+        return num_of_logs
+
     def export_output_logs(self):
-        self.telldebug("\nExporting Output Logs")
-        self.text_window.delete_all()
+        if self.enable_logs.get():
+            self.telldebug("\nExporting Output Logs")
+            self.text_window.delete_all()
 
     def _lead_search(self, event=None):
         if not self.folder.get():
