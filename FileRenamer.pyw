@@ -47,11 +47,11 @@ class FileRenamerApp(PageMaster):
         self.os_operations = tk.BooleanVar()
         self.skip_named = tk.BooleanVar()
         self.nested_dirs = tk.BooleanVar()
-        self.debug_var = tk.BooleanVar()
         self.enable_logs = tk.BooleanVar()
         self.log_filename = tk.StringVar()
         self.max_logs = tk.IntVar()
         self.current_log = tk.IntVar()
+        self.debug_var = tk.BooleanVar()
 
         # ****** Variable Initializations ******
         self.os_operations.set(True)
@@ -615,6 +615,7 @@ class MainPage(Page):
         # ****** Output Log Counting ******
         self.log_filename = self.variables["log_filename"]
         self.num_of_logs = self.number_logs(self.log_filename.get())
+        self.variables["current_log"].set(self.num_of_logs)
         self.telldebug("Number of Logs:", self.num_of_logs)
 
         # ****** Page Variables ******
