@@ -189,8 +189,8 @@ class FileRenamerApp(PageMaster):
                         check.append(False)
                 else:
                     # this statement is not the same as the
-                    # one above is for tk variables only.
-                    # This is a check for non tk variables.
+                    # one above. That one is for tk variables
+                    # only. This is a check for non tk variables.
                     if not copy == item:
                         check.append(False)
         if all(check):
@@ -212,8 +212,8 @@ class FileRenamerApp(PageMaster):
         self.variables["current_log"] = self.current_log
         self.variables["debug_var"] = self.debug_var
         exts = self.supported_extensions.get().split(",")
-        for i in range(len(exts)):
-            exts[i] = exts[i].lstrip(" ")
+        for index, extension in enumerate(exts):
+            exts[index] = extension.lstrip(" ")
         self.variables["converted_extensions"] = exts
 
         if self.DEBUG:
@@ -221,9 +221,8 @@ class FileRenamerApp(PageMaster):
 
     def display_vars(self):
         self.display("\nSettings Updated:")
-        for key, value in zip(
-                self.variables,
-                self.variables.values()):
+        vardict = self.variables
+        for key, value in vardict.items():
             self.display("".join(
                 i[0].capitalize() for i in key.split("_")
                 ) + ":", end=" ")
